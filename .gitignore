@@ -1,1 +1,11 @@
 /SRC App/bin/
+/SRC App/obj/
+/SRC App.deps.json
+/SRC App.runtimeconfig.json
+/idea/
+config/
+
+AssemblyInfo.cs
+
+*.bak
+*.tmp
