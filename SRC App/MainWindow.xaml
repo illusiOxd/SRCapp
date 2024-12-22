@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SystemResourcesControlWpf"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="System Resources Control" Height="600" Width="1000"
+        Title="System Resources Control" Height="600" Width="800"
         FontFamily="Segoe UI" FontSize="14">
 
     <Window.Resources>
@@ -35,34 +36,56 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="0" Margin="10">
+         <DockPanel Grid.Row="0" Margin="10">
             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                <Button Content="CPU Info" Click="ShowCpuInfo_Click"/>
-                <Button Content="GPU Info" Click="ShowGpuInfo_Click"/>
-                <Button Content="RAM Info" Click="ShowRamInfo_Click"/>
-                <Button Content="Disk Info" Click="ShowDiskInfo_Click"/>
-                <Button Content="Network Info" Click="ShowNetworkInfo_Click"/>
-                <Button Content="System Summary" Click="ShowSystemSummary_Click"/>
-                <Button Content="Temperature Info" Click="ShowTemperatureInfo_Click"/>
+                  <Button ToolTip="Show CPU Information" Click="ShowCpuInfo_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Chip}" Width="24" Height="24" />
+                </Button>
+                 <Button ToolTip="Show GPU Information" Click="ShowGpuInfo_Click">
+                     <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Gpu}" Width="24" Height="24" />
+               </Button>
+                 <Button ToolTip="Show RAM Information" Click="ShowRamInfo_Click">
+                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Memory}" Width="24" Height="24" />
+               </Button>
+                 <Button ToolTip="Show Disk Information" Click="ShowDiskInfo_Click">
+                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Harddisk}" Width="24" Height="24" />
+                </Button>
+                 <Button ToolTip="Show Network Information" Click="ShowNetworkInfo_Click">
+                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Network}" Width="24" Height="24" />
+                </Button>
+                 <Button ToolTip="Show System Summary" Click="ShowSystemSummary_Click">
+                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Information}" Width="24" Height="24" />
+                 </Button>
+                <Button ToolTip="Show Temperature Information" Click="ShowTemperatureInfo_Click">
+                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Thermometer}" Width="24" Height="24" />
+               </Button>
                  <Button Content="Run Benchmark" Click="RunBenchmark_Click"/>
-                <Button Content="Exit" Click="TerminateProgram_Click"/>
+                <Button ToolTip="Exit Application" Click="TerminateProgram_Click">
+                   <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.ExitToApp}" Width="24" Height="24" />
+                 </Button>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Continue (y)" Click="ContinueRun_Click"/>
-                <Button Content="Stop (n)" Click="StopRun_Click"/>
+                <Button ToolTip="Continue Monitoring" Click="ContinueRun_Click">
+                   <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Play}" Width="24" Height="24" />
+                </Button>
+                 <Button ToolTip="Stop Monitoring" Click="StopRun_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Stop}" Width="24" Height="24" />
+                 </Button>
             </StackPanel>
         </DockPanel>
-       <StackPanel Grid.Row="1" Margin="10" Orientation="Vertical">
-            <TextBlock x:Name="BenchmarkStatusTextBlock"  HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas"  Visibility="Collapsed"/>
-            <TextBlock x:Name="BenchmarkStageTextBlock" HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas" Visibility="Collapsed" Margin="0,2,0,2"/>
+        
+           <StackPanel Grid.Row="1" Margin="10" Orientation="Vertical">
+            <TextBlock x:Name="BenchmarkStatusTextBlock"  HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas" Visibility="Collapsed"/>
+             <TextBlock x:Name="BenchmarkStageTextBlock" HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas" Visibility="Collapsed" Margin="0,2,0,2"/>
            <ProgressBar x:Name="BenchmarkProgressBar" Height="20" Minimum="0" Maximum="100"  Margin="0,5,0,5" Visibility="Collapsed" />
-       </StackPanel>
+        </StackPanel>
 
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10">
-           <StackPanel x:Name="OutputPanel"  />
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"  Margin="10">
+          <StackPanel x:Name="OutputPanel" >
+          </StackPanel>
        </ScrollViewer>
+
     </Grid>
 </Window>

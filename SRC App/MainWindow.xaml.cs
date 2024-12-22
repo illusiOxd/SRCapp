@@ -8,14 +8,20 @@ using System.Resources.Control.Models;
 using System.Resources.Control.Services;
 using System.Windows.Media;
 using System.Threading.Tasks;
+using System.Security.Principal;
+using System.Security.Permissions;
+//Removed using OpenHardwareMonitor.Hardware;
+using System.Management;
+
 
 namespace SystemResourcesControlWpf
 {
     public partial class MainWindow : Window
     {
-        private readonly ISystemInfoService _systemInfoService;
-        private bool isStopped;
-        private readonly Model _model;
+         private readonly ISystemInfoService _systemInfoService;
+         private bool isStopped;
+         private readonly Model _model;
+        //Removed private OHM.Computer _computer;
 
 
         public MainWindow()
@@ -23,187 +29,215 @@ namespace SystemResourcesControlWpf
             InitializeComponent();
             _systemInfoService = new SystemInfoService();
               _model = new Model(_systemInfoService);
+           //Removed  InitializeOpenHardwareMonitor();
+        }
+       //Removed InitializeOpenHardwareMonitor()
+        
+          private bool IsRunAsAdmin()
+       {
+           try
+            {
+                 WindowsIdentity id = WindowsIdentity.GetCurrent();
+                WindowsPrincipal principal = new WindowsPrincipal(id);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            catch (Exception ex)
+           {
+               MessageBox.Show($"Error checking admin rights: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
         }
 
-        private void AddOutput(string text)
+        private void AddOutput(string text, StackPanel panel = null)
         {
             TextBlock textBlock = new TextBlock
             {
                 Text = text,
                 Margin = new Thickness(0, 2, 0, 2),
-                TextWrapping = TextWrapping.Wrap,
+                 TextWrapping = TextWrapping.Wrap,
                 FontFamily = new FontFamily("Consolas"),
                 FontSize = 14
-            };
-            OutputPanel.Children.Add(textBlock);
-        }
+           };
+            if(panel == null)
+                OutputPanel.Children.Add(textBlock);
+           else
+                panel.Children.Add(textBlock);
+       }
+         private void AddOutputSeparator(StackPanel panel = null)
+         {
+           var separator = new Border { BorderBrush = Brushes.Gray, BorderThickness = new Thickness(0, 0, 0, 1), Margin = new Thickness(0, 5, 0, 5) };
+             if (panel == null)
+                OutputPanel.Children.Add(separator);
+             else
+                panel.Children.Add(separator);
+         }
 
-        private void AddOutputSeparator()
+        private void AddCard(string header, Action<StackPanel> content)
         {
-            var separator = new Border { BorderBrush = Brushes.Gray, BorderThickness = new Thickness(0, 0, 0, 1), Margin = new Thickness(0, 5, 0, 5) };
-            OutputPanel.Children.Add(separator);
-        }
-        private void ShowCpuInfo_Click(object sender, RoutedEventArgs e)
-        {
-            OutputPanel.Children.Clear();
-             AddOutput("----- CPU Information -----");
-            DisplayDetailedCpuInfo();
-        }
+            GroupBox card = new GroupBox { Header = header, Margin = new Thickness(0, 5, 0, 5)};
+              StackPanel panel = new StackPanel();
+           card.Content = panel;
+            content(panel);
+           OutputPanel.Children.Add(card);
 
-         private void DisplayDetailedCpuInfo()
-        {
-            try
-            {
-                var cpuInfo = _systemInfoService.GetDetailedCpuInfo();
-                  AddOutput("--- Processor Information ---");
-                AddOutput($"Processor Name: {cpuInfo.Name}");
-                AddOutput($"Manufacturer: {cpuInfo.Manufacturer}");
-                AddOutput($"Number of Cores: {cpuInfo.NumberOfCores}");
-                AddOutput($"Number of Logical Processors: {cpuInfo.NumberOfLogicalProcessors}");
-                 AddOutput($"Max Clock Speed: {cpuInfo.MaxClockSpeed} MHz");
-                AddOutput($"Current Clock Speed: {cpuInfo.CurrentClockSpeed} MHz");
-                AddOutput($"Processor ID: {cpuInfo.ProcessorId}");
-               AddOutput($"L2 Cache Size: {cpuInfo.L2CacheSize} KB");
-                AddOutput($"L3 Cache Size: {cpuInfo.L3CacheSize} KB");
-                AddOutput($"Architecture: {cpuInfo.Architecture}");
-               AddOutput($"Processor Type: {cpuInfo.ProcessorType}");
-                AddOutput($"Status: {cpuInfo.Status}");
-                AddOutputSeparator();
-            }
-            catch (Exception ex)
-            {
-                AddOutput($"Error fetching CPU info: {ex.Message}");
-            }
-        }
-
-
-        private void ShowGpuInfo_Click(object sender, RoutedEventArgs e)
-        {
-            OutputPanel.Children.Clear();
-            AddOutput("----- GPU Information -----");
-            try
-            {
-                foreach (var gpuInfo in _systemInfoService.GetGpuInfo())
-                {
-                     AddOutput("--- GPU Information ---");
-                    AddOutput($"GPU Name: {gpuInfo.Name}");
-                     AddOutput($"Adapter RAM: {gpuInfo.AdapterRAM}");
-                   AddOutput($"Driver Version: {gpuInfo.DriverVersion}");
-                    AddOutput($"Video Processor: {gpuInfo.VideoProcessor}");
-                    AddOutputSeparator();
-                }
-            }
-            catch (Exception ex)
-            {
-               AddOutput($"Error fetching GPU info: {ex.Message}");
-            }
-        }
-        private void ShowRamInfo_Click(object sender, RoutedEventArgs e)
+       }
+       private void ShowCpuInfo_Click(object sender, RoutedEventArgs e)
         {
              OutputPanel.Children.Clear();
-             AddOutput("----- RAM Information -----");
+            AddCard("CPU Information", (panel)=> {
+                 DisplayDetailedCpuInfo(panel);
+           });
+        }
+
+        private void DisplayDetailedCpuInfo(StackPanel panel)
+       {
             try
             {
-                var ramInfos = _systemInfoService.GetRamInfo();
-                AddOutput($"Total Installed RAM: {ramInfos.TotalCapacity} GB\n");
-
-                int moduleNumber = 1;
-                foreach (var ramInfo in ramInfos.Modules)
-                {
-                    AddOutput($"Module {moduleNumber++}:");
-                     AddOutput($"  Capacity: {ramInfo.Capacity} GB");
-                    AddOutput($"  Manufacturer: {ramInfo.Manufacturer}");
-                    AddOutput($"  Speed: {ramInfo.Speed} MHz");
-                   AddOutput($"  Part Number: {ramInfo.PartNumber}\n");
-                   AddOutputSeparator();
-                }
+               var cpuInfo = _systemInfoService.GetDetailedCpuInfo();
+                 AddOutput("Processor Name: " + cpuInfo.Name, panel);
+                 AddOutput("Manufacturer: " + cpuInfo.Manufacturer, panel);
+                 AddOutput("Number of Cores: " + cpuInfo.NumberOfCores, panel);
+                AddOutput("Number of Logical Processors: " + cpuInfo.NumberOfLogicalProcessors, panel);
+                 AddOutput("Max Clock Speed: " + cpuInfo.MaxClockSpeed + " MHz", panel);
+                AddOutput("Current Clock Speed: " + cpuInfo.CurrentClockSpeed + " MHz", panel);
+                 AddOutput("Processor ID: " + cpuInfo.ProcessorId, panel);
+                AddOutput("L2 Cache Size: " + cpuInfo.L2CacheSize + " KB", panel);
+                AddOutput("L3 Cache Size: " + cpuInfo.L3CacheSize + " KB", panel);
+                 AddOutput("Architecture: " + cpuInfo.Architecture, panel);
+               AddOutput("Processor Type: " + cpuInfo.ProcessorType, panel);
+                AddOutput("Status: " + cpuInfo.Status, panel);
+                AddOutputSeparator(panel);
             }
-            catch (Exception ex)
-            {
-                AddOutput($"Error fetching RAM info: {ex.Message}");
+           catch (Exception ex)
+           {
+                 AddOutput("Error fetching CPU info: " + ex.Message, panel);
             }
         }
-         private void ShowDiskInfo_Click(object sender, RoutedEventArgs e)
+         private void ShowGpuInfo_Click(object sender, RoutedEventArgs e)
         {
             OutputPanel.Children.Clear();
-            AddOutput("----- Disk Information -----");
-            try
-            {
-                foreach (var diskInfo in _systemInfoService.GetDiskInfo())
+            AddCard("GPU Information", (panel) => {
+                 try
                 {
-                     AddOutput($"Model: {diskInfo.Model}");
-                     AddOutput($"Interface Type: {diskInfo.InterfaceType}");
-                    AddOutput($"Size: {diskInfo.Size} GB");
-                     AddOutput($"Media Type: {diskInfo.MediaType}");
-                    AddOutputSeparator();
-                 }
-            }
-            catch (Exception ex)
-            {
-                 AddOutput($"Error fetching Disk info: {ex.Message}");
-            }
+                    foreach (var gpuInfo in _systemInfoService.GetGpuInfo())
+                    {
+                         AddOutput("GPU Name: " + gpuInfo.Name, panel);
+                        AddOutput("Adapter RAM: " + gpuInfo.AdapterRAM, panel);
+                        AddOutput("Driver Version: " + gpuInfo.DriverVersion, panel);
+                       AddOutput("Video Processor: " + gpuInfo.VideoProcessor, panel);
+                       AddOutputSeparator(panel);
+                     }
+                }
+                 catch (Exception ex)
+                 {
+                      AddOutput("Error fetching GPU info: " + ex.Message, panel);
+                }
+            });
         }
+       private void ShowRamInfo_Click(object sender, RoutedEventArgs e)
+         {
+            OutputPanel.Children.Clear();
+           AddCard("RAM Information", (panel) => {
+                try
+                {
+                     var ramInfos = _systemInfoService.GetRamInfo();
+                   AddOutput("Total Installed RAM: " + ramInfos.TotalCapacity + " GB\n", panel);
+
+                    int moduleNumber = 1;
+                   foreach (var ramInfo in ramInfos.Modules)
+                   {
+                         AddOutput("Module " + moduleNumber++ + ":", panel);
+                        AddOutput("  Capacity: " + ramInfo.Capacity + " GB", panel);
+                       AddOutput("  Manufacturer: " + ramInfo.Manufacturer, panel);
+                         AddOutput("  Speed: " + ramInfo.Speed + " MHz", panel);
+                        AddOutput("  Part Number: " + ramInfo.PartNumber + "\n", panel);
+                        AddOutputSeparator(panel);
+                    }
+                 }
+               catch (Exception ex)
+                {
+                      AddOutput("Error fetching RAM info: " + ex.Message, panel);
+                }
+            });
+       }
+        private void ShowDiskInfo_Click(object sender, RoutedEventArgs e)
+        {
+            OutputPanel.Children.Clear();
+            AddCard("Disk Information", (panel) => {
+                try
+                {
+                   foreach (var diskInfo in _systemInfoService.GetDiskInfo())
+                    {
+                        AddOutput("Model: " + diskInfo.Model, panel);
+                       AddOutput("Interface Type: " + diskInfo.InterfaceType, panel);
+                        AddOutput("Size: " + diskInfo.Size + " GB", panel);
+                       AddOutput("Media Type: " + diskInfo.MediaType, panel);
+                       AddOutputSeparator(panel);
+                    }
+                }
+                catch (Exception ex)
+                {
+                     AddOutput("Error fetching Disk info: " + ex.Message, panel);
+                }
+            });
+         }
         private void ShowNetworkInfo_Click(object sender, RoutedEventArgs e)
         {
-           OutputPanel.Children.Clear();
-            AddOutput("----- Network Information -----");
-            try
-            {
-                foreach (var networkInfo in _systemInfoService.GetNetworkInfo())
-                {
-                    AddOutput($"Name: {networkInfo.Name}");
-                    AddOutput($"MAC Address: {networkInfo.MACAddress}");
-                   AddOutput($"Speed: {networkInfo.Speed} bps");
-                  AddOutputSeparator();
-                }
-            }
-            catch (Exception ex)
-            {
-                AddOutput($"Error fetching Network info: {ex.Message}");
-            }
-        }
-         private void ShowSystemSummary_Click(object sender, RoutedEventArgs e)
-        {
             OutputPanel.Children.Clear();
-             AddOutput("----- System Summary -----");
-            try
-            {
+           AddCard("Network Information", (panel) => {
+                try
+                {
+                   foreach (var networkInfo in _systemInfoService.GetNetworkInfo())
+                    {
+                        AddOutput("Name: " + networkInfo.Name, panel);
+                       AddOutput("MAC Address: " + networkInfo.MACAddress, panel);
+                         AddOutput("Speed: " + networkInfo.Speed + " bps", panel);
+                        AddOutputSeparator(panel);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AddOutput("Error fetching Network info: " + ex.Message, panel);
+                }
+            });
+        }
+        private void ShowSystemSummary_Click(object sender, RoutedEventArgs e)
+        {
+           OutputPanel.Children.Clear();
+           AddCard("System Summary", (panel) => {
+               try
+                {
+                    var cpuInfo = _systemInfoService.GetSystemSummaryCpuInfo();
+                   AddOutput("CPU: " + cpuInfo.Name + " - " + cpuInfo.NumberOfCores + " Cores, " + cpuInfo.NumberOfLogicalProcessors + " Threads", panel);
 
-                var cpuInfo = _systemInfoService.GetSystemSummaryCpuInfo();
-                 AddOutput($"CPU: {cpuInfo.Name} - {cpuInfo.NumberOfCores} Cores, {cpuInfo.NumberOfLogicalProcessors} Threads");
+                   var ramInfo = _systemInfoService.GetSystemSummaryRamInfo();
+                    AddOutput("RAM: " + ramInfo.TotalRam + " GB Total", panel);
 
-                var ramInfo = _systemInfoService.GetSystemSummaryRamInfo();
-                 AddOutput($"RAM: {ramInfo.TotalRam} GB Total");
+                   var gpuInfo = _systemInfoService.GetSystemSummaryGpuInfo();
+                   AddOutput("GPU: " + gpuInfo.Name + " - " + gpuInfo.AdapterRAM + " bytes of Memory", panel);
 
-                var gpuInfo = _systemInfoService.GetSystemSummaryGpuInfo();
-                AddOutput($"GPU: {gpuInfo.Name} - {gpuInfo.AdapterRAM} bytes of Memory");
-
-                var diskInfo = _systemInfoService.GetSystemSummaryDiskInfo();
-                 AddOutput($"Disk: {diskInfo.Model} - {diskInfo.Size} bytes Capacity");
-                 AddOutputSeparator();
-            }
-            catch (Exception ex)
-            {
-                AddOutput($"Error fetching system summary: {ex.Message}");
-            }
+                    var diskInfo = _systemInfoService.GetSystemSummaryDiskInfo();
+                   AddOutput("Disk: " + diskInfo.Model + " - " + diskInfo.Size + " bytes Capacity", panel);
+                   AddOutputSeparator(panel);
+                }
+              catch (Exception ex)
+                {
+                    AddOutput("Error fetching system summary: " + ex.Message, panel);
+                }
+           });
         }
         private void ShowTemperatureInfo_Click(object sender, RoutedEventArgs e)
         {
-            OutputPanel.Children.Clear();
-            AddOutput("----- Temperature Information -----");
-            try
-            {
-                var temperatureInfo = _systemInfoService.GetTemperatureInfo();
-                AddOutput(temperatureInfo.HasTemperatureData
-                     ? $"Temperature: {temperatureInfo.TemperatureCelsius:F2}°C"
-                    : "No temperature information available.");
-                  AddOutputSeparator();
-            }
-            catch (Exception ex)
-            {
-                 AddOutput($"Error fetching Temperature info: {ex.Message}");
-            }
+             OutputPanel.Children.Clear();
+            AddCard("Temperature Information", (panel) => {
+                if (!IsRunAsAdmin()) {
+                   AddOutput("Please run the program as administrator to get temperature data.", panel);
+                   return;
+                }
+                 AddOutput("Temperature information is not available (Removed the part that was causing the errors)", panel);
+             });
         }
+       //Removed  GetManagementObjectValue()
         private void TerminateProgram_Click(object sender, RoutedEventArgs e)
         {
             AddOutput("Exiting program...");
@@ -211,63 +245,41 @@ namespace SystemResourcesControlWpf
         }
         private void ContinueRun_Click(object sender, RoutedEventArgs e)
         {
-             AddOutput("Restarting monitoring...");
+            AddOutput("Restarting monitoring...");
              isStopped = false;
         }
         private void StopRun_Click(object sender, RoutedEventArgs e)
         {
-            AddOutput("Program terminated.");
-             isStopped = true;
+             AddOutput("Program terminated.");
+            isStopped = true;
         }
-
-        private async void RunBenchmark_Click(object sender, RoutedEventArgs e)
-        {
+        
+         private async void RunBenchmark_Click(object sender, RoutedEventArgs e)
+         {
              OutputPanel.Children.Clear();
-             BenchmarkProgressBar.Visibility = Visibility.Visible;
-             BenchmarkStatusTextBlock.Visibility = Visibility.Visible;
-             BenchmarkStageTextBlock.Visibility = Visibility.Visible;
-
-             BenchmarkStatusTextBlock.Text = "Initializing...";
-            BenchmarkProgressBar.Value = 0;
+           AddCard("Benchmark Results", (panel) => {
+               RunBenchmarkAsync(panel);
+             });
+         }
+         private async Task RunBenchmarkAsync(StackPanel panel)
+        {
             await Task.Run(() =>
             {
-                Benchmark benchmark = new Benchmark();
+                  Benchmark benchmark = new Benchmark();
                  _model.BenchmarkRun(benchmark);
-
-                 Dispatcher.Invoke(() =>
-                {
-                   BenchmarkStatusTextBlock.Text = "Running Benchmark...";
-                    BenchmarkStageTextBlock.Text = "Running Floating point operation...";
-                });
-                for (int i = 0; i <= 100; i+= 25) {
-                     System.Threading.Thread.Sleep(100);
-                    Dispatcher.Invoke(() => {
-                        BenchmarkProgressBar.Value = i;
-                       if (i == 25)  BenchmarkStageTextBlock.Text = "Running Integer operation...";
-                       else if (i == 50)  BenchmarkStageTextBlock.Text = "Running memory operation...";
-                       else if (i == 75)  BenchmarkStageTextBlock.Text = "Running mixed operation...";
-                       else if (i == 100) BenchmarkStageTextBlock.Text = "Finishing...";
-                    });
-               }
-
-
                 Dispatcher.Invoke(() =>
                 {
-                    BenchmarkStatusTextBlock.Text = "Completing...";
-                     AddOutput($"Benchmark Score: {benchmark.score:N0}");
-                     AddOutput($"Threads: {benchmark.threads}");
-                     AddOutput($"Time: {benchmark.time:F2} seconds");
-                    AddOutputSeparator();
-                     AddOutput($"Floating Point Score: {benchmark.floatingPointScore:N0}");
-                     AddOutput($"Integer Score: {benchmark.integerScore:N0}");
-                   AddOutput($"Memory Score: {benchmark.memoryScore:N0}");
-                    AddOutput($"Mixed Score: {benchmark.mixedScore:N0}");
-                  AddOutputSeparator();
-                    BenchmarkStatusTextBlock.Visibility = Visibility.Collapsed;
-                    BenchmarkProgressBar.Visibility = Visibility.Collapsed;
-                      BenchmarkStageTextBlock.Visibility = Visibility.Collapsed;
-                   });
+                    AddOutput("Benchmark Score: " + benchmark.score.ToString("N0"), panel);
+                     AddOutput("Threads: " + benchmark.threads, panel);
+                   AddOutput("Time: " + benchmark.time.ToString("F2") + " seconds", panel);
+                    AddOutputSeparator(panel);
+                     AddOutput("Floating Point Score: " + benchmark.floatingPointScore.ToString("N0"), panel);
+                     AddOutput("Integer Score: " + benchmark.integerScore.ToString("N0"), panel);
+                   AddOutput("Memory Score: " + benchmark.memoryScore.ToString("N0"), panel);
+                   AddOutput("Mixed Score: " + benchmark.mixedScore.ToString("N0"), panel);
+                   AddOutputSeparator(panel);
+                 });
             });
-        }
+         }
     }
 }
