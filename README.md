@@ -13,7 +13,7 @@ This WPF application provides information about your computer's system resources
 *   **Network Info:** Shows information about network adapters, including name, MAC address, and speed.
 *   **System Summary:** Displays a brief summary of information about CPU, RAM, GPU, and disks.
 *   **Temperature Info:** Shows the current temperature.
-*   **Benchmark feature** For performance evaluation
+*   **Benchmark feature:** For performance evaluation
 *   **Controls:**
     *   "Continue (y)" button: Restarts monitoring.
     *   "Stop (n)" button: Stops monitoring.
