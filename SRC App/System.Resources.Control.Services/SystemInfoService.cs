@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Management; // Added this using directive
+using System.Management; 
 using System.Resources.Control.Models;
 
 namespace System.Resources.Control.Services
@@ -129,5 +130,6 @@ namespace System.Resources.Control.Services
                 return new List<T>();
             }
         }
+        
     }
 }

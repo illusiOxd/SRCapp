@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SystemResourcesControlWpf"
         mc:Ignorable="d"
-        Title="System Resources Control" Height="600" Width="800"
+        Title="System Resources Control" Height="600" Width="1000"
         FontFamily="Segoe UI" FontSize="14">
 
     <Window.Resources>
@@ -33,6 +33,7 @@
     <Grid Background="#f0f0f0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -46,6 +47,7 @@
                 <Button Content="Network Info" Click="ShowNetworkInfo_Click"/>
                 <Button Content="System Summary" Click="ShowSystemSummary_Click"/>
                 <Button Content="Temperature Info" Click="ShowTemperatureInfo_Click"/>
+                 <Button Content="Run Benchmark" Click="RunBenchmark_Click"/>
                 <Button Content="Exit" Click="TerminateProgram_Click"/>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -53,8 +55,13 @@
                 <Button Content="Stop (n)" Click="StopRun_Click"/>
             </StackPanel>
         </DockPanel>
+       <StackPanel Grid.Row="1" Margin="10" Orientation="Vertical">
+            <TextBlock x:Name="BenchmarkStatusTextBlock"  HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas"  Visibility="Collapsed"/>
+            <TextBlock x:Name="BenchmarkStageTextBlock" HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas" Visibility="Collapsed" Margin="0,2,0,2"/>
+           <ProgressBar x:Name="BenchmarkProgressBar" Height="20" Minimum="0" Maximum="100"  Margin="0,5,0,5" Visibility="Collapsed" />
+       </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10">
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10">
            <StackPanel x:Name="OutputPanel"  />
        </ScrollViewer>
     </Grid>

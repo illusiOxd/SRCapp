@@ -8,7 +8,8 @@ namespace System.Resources.Control.Models
     {
         List<PerformanceCounter> ThreadCounters { get; set; }
         void InitializeThreadCounters();
-        double SimulateHeavyWorkload(int threadIndex);
+        (double, double, double, double, double, double, double, double, double) SimulateHeavyWorkload(int threadIndex, Benchmark benchmark);
         int CalculateScore(double threadScore, TimeSpan elapsedTime);
+        void BenchmarkRun(Benchmark benchmark);
     }
 }

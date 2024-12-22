@@ -7,40 +7,45 @@ using System.Windows.Controls;
 using System.Resources.Control.Models;
 using System.Resources.Control.Services;
 using System.Windows.Media;
+using System.Threading.Tasks;
 
 namespace SystemResourcesControlWpf
 {
     public partial class MainWindow : Window
     {
-         private readonly ISystemInfoService _systemInfoService;
-         private bool isStopped;
+        private readonly ISystemInfoService _systemInfoService;
+        private bool isStopped;
+        private readonly Model _model;
+
 
         public MainWindow()
         {
             InitializeComponent();
             _systemInfoService = new SystemInfoService();
-         }
-
-         private void AddOutput(string text)
-         {
-             TextBlock textBlock = new TextBlock
-             {
-                 Text = text,
-                 Margin = new Thickness(0, 2, 0, 2),
-                 TextWrapping = TextWrapping.Wrap,
-                 FontFamily = new FontFamily("Consolas"),
-                 FontSize = 14
-             };
-             OutputPanel.Children.Add(textBlock);
+              _model = new Model(_systemInfoService);
         }
-          private void AddOutputSeparator()
-         {
+
+        private void AddOutput(string text)
+        {
+            TextBlock textBlock = new TextBlock
+            {
+                Text = text,
+                Margin = new Thickness(0, 2, 0, 2),
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = 14
+            };
+            OutputPanel.Children.Add(textBlock);
+        }
+
+        private void AddOutputSeparator()
+        {
             var separator = new Border { BorderBrush = Brushes.Gray, BorderThickness = new Thickness(0, 0, 0, 1), Margin = new Thickness(0, 5, 0, 5) };
             OutputPanel.Children.Add(separator);
-         }
+        }
         private void ShowCpuInfo_Click(object sender, RoutedEventArgs e)
         {
-            OutputPanel.Children.Clear(); // Очищаем предыдущий вывод
+            OutputPanel.Children.Clear();
              AddOutput("----- CPU Information -----");
             DisplayDetailedCpuInfo();
         }
@@ -93,30 +98,30 @@ namespace SystemResourcesControlWpf
                AddOutput($"Error fetching GPU info: {ex.Message}");
             }
         }
-         private void ShowRamInfo_Click(object sender, RoutedEventArgs e)
-         {
+        private void ShowRamInfo_Click(object sender, RoutedEventArgs e)
+        {
              OutputPanel.Children.Clear();
              AddOutput("----- RAM Information -----");
-             try
-             {
+            try
+            {
                 var ramInfos = _systemInfoService.GetRamInfo();
-               AddOutput($"Total Installed RAM: {ramInfos.TotalCapacity} GB\n");
+                AddOutput($"Total Installed RAM: {ramInfos.TotalCapacity} GB\n");
 
                 int moduleNumber = 1;
                 foreach (var ramInfo in ramInfos.Modules)
                 {
-                   AddOutput($"Module {moduleNumber++}:");
-                    AddOutput($"  Capacity: {ramInfo.Capacity} GB");
+                    AddOutput($"Module {moduleNumber++}:");
+                     AddOutput($"  Capacity: {ramInfo.Capacity} GB");
                     AddOutput($"  Manufacturer: {ramInfo.Manufacturer}");
                     AddOutput($"  Speed: {ramInfo.Speed} MHz");
-                    AddOutput($"  Part Number: {ramInfo.PartNumber}\n");
-                    AddOutputSeparator();
-                 }
-             }
+                   AddOutput($"  Part Number: {ramInfo.PartNumber}\n");
+                   AddOutputSeparator();
+                }
+            }
             catch (Exception ex)
-             {
-               AddOutput($"Error fetching RAM info: {ex.Message}");
-             }
+            {
+                AddOutput($"Error fetching RAM info: {ex.Message}");
+            }
         }
          private void ShowDiskInfo_Click(object sender, RoutedEventArgs e)
         {
@@ -131,88 +136,138 @@ namespace SystemResourcesControlWpf
                     AddOutput($"Size: {diskInfo.Size} GB");
                      AddOutput($"Media Type: {diskInfo.MediaType}");
                     AddOutputSeparator();
-                }
+                 }
             }
             catch (Exception ex)
             {
-                AddOutput($"Error fetching Disk info: {ex.Message}");
+                 AddOutput($"Error fetching Disk info: {ex.Message}");
             }
         }
         private void ShowNetworkInfo_Click(object sender, RoutedEventArgs e)
         {
            OutputPanel.Children.Clear();
-             AddOutput("----- Network Information -----");
+            AddOutput("----- Network Information -----");
             try
             {
                 foreach (var networkInfo in _systemInfoService.GetNetworkInfo())
                 {
-                   AddOutput($"Name: {networkInfo.Name}");
+                    AddOutput($"Name: {networkInfo.Name}");
                     AddOutput($"MAC Address: {networkInfo.MACAddress}");
-                    AddOutput($"Speed: {networkInfo.Speed} bps");
-                   AddOutputSeparator();
+                   AddOutput($"Speed: {networkInfo.Speed} bps");
+                  AddOutputSeparator();
                 }
             }
             catch (Exception ex)
             {
-                 AddOutput($"Error fetching Network info: {ex.Message}");
+                AddOutput($"Error fetching Network info: {ex.Message}");
             }
         }
          private void ShowSystemSummary_Click(object sender, RoutedEventArgs e)
         {
             OutputPanel.Children.Clear();
-              AddOutput("----- System Summary -----");
-             try
+             AddOutput("----- System Summary -----");
+            try
             {
 
                 var cpuInfo = _systemInfoService.GetSystemSummaryCpuInfo();
-                AddOutput($"CPU: {cpuInfo.Name} - {cpuInfo.NumberOfCores} Cores, {cpuInfo.NumberOfLogicalProcessors} Threads");
+                 AddOutput($"CPU: {cpuInfo.Name} - {cpuInfo.NumberOfCores} Cores, {cpuInfo.NumberOfLogicalProcessors} Threads");
 
                 var ramInfo = _systemInfoService.GetSystemSummaryRamInfo();
-                AddOutput($"RAM: {ramInfo.TotalRam} GB Total");
+                 AddOutput($"RAM: {ramInfo.TotalRam} GB Total");
 
                 var gpuInfo = _systemInfoService.GetSystemSummaryGpuInfo();
                 AddOutput($"GPU: {gpuInfo.Name} - {gpuInfo.AdapterRAM} bytes of Memory");
 
                 var diskInfo = _systemInfoService.GetSystemSummaryDiskInfo();
                  AddOutput($"Disk: {diskInfo.Model} - {diskInfo.Size} bytes Capacity");
-                AddOutputSeparator();
+                 AddOutputSeparator();
             }
             catch (Exception ex)
             {
-               AddOutput($"Error fetching system summary: {ex.Message}");
+                AddOutput($"Error fetching system summary: {ex.Message}");
             }
         }
-         private void ShowTemperatureInfo_Click(object sender, RoutedEventArgs e)
+        private void ShowTemperatureInfo_Click(object sender, RoutedEventArgs e)
         {
             OutputPanel.Children.Clear();
-             AddOutput("----- Temperature Information -----");
+            AddOutput("----- Temperature Information -----");
             try
             {
-                 var temperatureInfo = _systemInfoService.GetTemperatureInfo();
-                 AddOutput(temperatureInfo.HasTemperatureData
+                var temperatureInfo = _systemInfoService.GetTemperatureInfo();
+                AddOutput(temperatureInfo.HasTemperatureData
                      ? $"Temperature: {temperatureInfo.TemperatureCelsius:F2}°C"
                     : "No temperature information available.");
                   AddOutputSeparator();
             }
             catch (Exception ex)
             {
-                AddOutput($"Error fetching Temperature info: {ex.Message}");
+                 AddOutput($"Error fetching Temperature info: {ex.Message}");
             }
         }
         private void TerminateProgram_Click(object sender, RoutedEventArgs e)
         {
-             AddOutput("Exiting program...");
+            AddOutput("Exiting program...");
             Environment.Exit(0);
         }
-          private void ContinueRun_Click(object sender, RoutedEventArgs e)
+        private void ContinueRun_Click(object sender, RoutedEventArgs e)
         {
-              AddOutput("Restarting monitoring...");
-              isStopped = false;
-         }
+             AddOutput("Restarting monitoring...");
+             isStopped = false;
+        }
         private void StopRun_Click(object sender, RoutedEventArgs e)
         {
             AddOutput("Program terminated.");
              isStopped = true;
+        }
+
+        private async void RunBenchmark_Click(object sender, RoutedEventArgs e)
+        {
+             OutputPanel.Children.Clear();
+             BenchmarkProgressBar.Visibility = Visibility.Visible;
+             BenchmarkStatusTextBlock.Visibility = Visibility.Visible;
+             BenchmarkStageTextBlock.Visibility = Visibility.Visible;
+
+             BenchmarkStatusTextBlock.Text = "Initializing...";
+            BenchmarkProgressBar.Value = 0;
+            await Task.Run(() =>
+            {
+                Benchmark benchmark = new Benchmark();
+                 _model.BenchmarkRun(benchmark);
+
+                 Dispatcher.Invoke(() =>
+                {
+                   BenchmarkStatusTextBlock.Text = "Running Benchmark...";
+                    BenchmarkStageTextBlock.Text = "Running Floating point operation...";
+                });
+                for (int i = 0; i <= 100; i+= 25) {
+                     System.Threading.Thread.Sleep(100);
+                    Dispatcher.Invoke(() => {
+                        BenchmarkProgressBar.Value = i;
+                       if (i == 25)  BenchmarkStageTextBlock.Text = "Running Integer operation...";
+                       else if (i == 50)  BenchmarkStageTextBlock.Text = "Running memory operation...";
+                       else if (i == 75)  BenchmarkStageTextBlock.Text = "Running mixed operation...";
+                       else if (i == 100) BenchmarkStageTextBlock.Text = "Finishing...";
+                    });
+               }
+
+
+                Dispatcher.Invoke(() =>
+                {
+                    BenchmarkStatusTextBlock.Text = "Completing...";
+                     AddOutput($"Benchmark Score: {benchmark.score:N0}");
+                     AddOutput($"Threads: {benchmark.threads}");
+                     AddOutput($"Time: {benchmark.time:F2} seconds");
+                    AddOutputSeparator();
+                     AddOutput($"Floating Point Score: {benchmark.floatingPointScore:N0}");
+                     AddOutput($"Integer Score: {benchmark.integerScore:N0}");
+                   AddOutput($"Memory Score: {benchmark.memoryScore:N0}");
+                    AddOutput($"Mixed Score: {benchmark.mixedScore:N0}");
+                  AddOutputSeparator();
+                    BenchmarkStatusTextBlock.Visibility = Visibility.Collapsed;
+                    BenchmarkProgressBar.Visibility = Visibility.Collapsed;
+                      BenchmarkStageTextBlock.Visibility = Visibility.Collapsed;
+                   });
+            });
         }
     }
 }
