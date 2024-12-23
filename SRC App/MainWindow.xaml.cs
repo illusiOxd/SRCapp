@@ -14,9 +14,78 @@ using System.Security.Permissions;
 using OpenHardwareMonitor.Hardware;
 using System.Management;
 using System.Windows.Shapes;
+using System.Threading;
+using System.Net.NetworkInformation;
+using System.Diagnostics;
+
 
 namespace SystemResourcesControlWpf
 {
+    // PerformanceMonitorWindow.xaml.cs
+    public partial class PerformanceMonitorWindow : Window, INotifyPropertyChanged
+    {
+        private double _cpuUsage;
+        private double _ramUsage;
+        private double _diskUsage;
+        private double _networkUsage;
+
+        public double CpuUsage
+        {
+            get => _cpuUsage;
+            set
+            {
+                _cpuUsage = value;
+                OnPropertyChanged(nameof(CpuUsage));
+            }
+        }
+
+        public double RamUsage
+        {
+            get => _ramUsage;
+            set
+            {
+                _ramUsage = value;
+                OnPropertyChanged(nameof(RamUsage));
+            }
+        }
+
+        public double DiskUsage
+        {
+            get => _diskUsage;
+            set
+            {
+                _diskUsage = value;
+                OnPropertyChanged(nameof(DiskUsage));
+            }
+        }
+
+        public double NetworkUsage
+        {
+            get => _networkUsage;
+            set
+            {
+                _networkUsage = value;
+                OnPropertyChanged(nameof(NetworkUsage));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public PerformanceMonitorWindow()
+        {
+            InitializeComponent();
+            DataContext = this;
+        }
+    }
+
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         private readonly ISystemInfoService _systemInfoService;
@@ -24,6 +93,12 @@ namespace SystemResourcesControlWpf
         private readonly Model _model;
         private System.Threading.Timer _timer;
         private double _canvasWidth;
+        private PerformanceMonitorWindow _performanceMonitorWindow;
+
+        public double CurrentCpuUsageValue { get; private set; }
+        public double CurrentRamUsageValue { get; private set; }
+        public double CurrentDiskUsageValue { get; private set; }
+        public double CurrentNetworkUsageValue { get; private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -40,8 +115,10 @@ namespace SystemResourcesControlWpf
             _systemInfoService = new SystemInfoService();
             _model = new Model(_systemInfoService);
 
-            StartCpuUsageMonitoring();
+            InitializeNetworkCounters();
+            StartMonitoring();
             Closed += MainWindow_Closed;
+            Loaded += MainWindow_Loaded;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -55,37 +132,53 @@ namespace SystemResourcesControlWpf
             _timer = null;
         }
 
-        private void StartCpuUsageMonitoring()
+        private void StartMonitoring()
         {
-            _timer = new System.Threading.Timer(UpdateCpuUsage, null, TimeSpan.Zero, TimeSpan.FromSeconds(0.5)); // Уменьшил интервал для более плавного графика
+            _timer = new System.Threading.Timer(UpdateAllResources, null, TimeSpan.Zero, TimeSpan.FromSeconds(0.5));
         }
 
-        private void UpdateCpuUsage(object state)
+        private void UpdateAllResources(object state)
         {
             if (isStopped) return;
+
             double cpuUsage = GetCurrentCpuUsage();
-            Dispatcher.Invoke(() =>
+            double ramUsage = GetCurrentRamUsage();
+            double diskUsage = GetCurrentDiskUsage();
+            double networkUsage = GetCurrentNetworkUsage();
+
+            CurrentCpuUsageValue = cpuUsage;
+            CurrentRamUsageValue = ramUsage;
+            CurrentDiskUsageValue = diskUsage;
+            CurrentNetworkUsageValue = networkUsage;
+            
+            Dispatcher.Invoke((Action)(() =>
             {
                 CpuUsageTextBlock.Text = $"CPU Usage: {cpuUsage:F2}%";
+                UpdateCpuUsageChart(cpuUsage);
 
-                // Получаем текущие точки
-                var points = CpuUsagePolyline.Points;
-
-                // Добавляем новую точку
-                points.Add(new Point(points.Count, CpuUsageCanvas.ActualHeight - (cpuUsage / 100.0 * CpuUsageCanvas.ActualHeight)));
-
-                // Если точек стало больше, чем ширина Canvas, удаляем первую
-                if (points.Count > _canvasWidth)
+                if (_performanceMonitorWindow != null && _performanceMonitorWindow.IsVisible)
                 {
-                    points.RemoveAt(0);
-
-                    // Сдвигаем все точки влево на 1
-                    for (int i = 0; i < points.Count; i++)
-                    {
-                        points[i] = new Point(points[i].X - 1, points[i].Y);
-                    }
+                    _performanceMonitorWindow.CpuUsage = CurrentCpuUsageValue;
+                    _performanceMonitorWindow.RamUsage = CurrentRamUsageValue;
+                    _performanceMonitorWindow.DiskUsage = CurrentDiskUsageValue;
+                    _performanceMonitorWindow.NetworkUsage = CurrentNetworkUsageValue;
                 }
-            });
+            }));
+        }
+
+        private void UpdateCpuUsageChart(double cpuUsage)
+        {
+            var points = CpuUsagePolyline.Points;
+            points.Add(new Point(points.Count, CpuUsageCanvas.ActualHeight - (cpuUsage / 100.0 * CpuUsageCanvas.ActualHeight)));
+
+            if (points.Count > _canvasWidth)
+            {
+                points.RemoveAt(0);
+                for (int i = 0; i < points.Count; i++)
+                {
+                    points[i] = new Point(points[i].X - 1, points[i].Y);
+                }
+            }
         }
 
         private double GetCurrentCpuUsage()
@@ -95,7 +188,68 @@ namespace SystemResourcesControlWpf
             {
                 totalCpu += counter.NextValue();
             }
-            return totalCpu / _model.ThreadCounters.Count;
+            return _model.ThreadCounters.Count > 0 ? totalCpu / _model.ThreadCounters.Count : 0;
+        }
+
+        private double GetCurrentRamUsage()
+        {
+            var ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
+            return ramCounter.NextValue();
+        }
+
+        private double GetCurrentDiskUsage()
+        {
+            try
+            {
+                var diskCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
+                diskCounter.NextValue();
+                Thread.Sleep(100); 
+                var diskUsage = diskCounter.NextValue();
+                diskCounter.Dispose();
+                return diskUsage;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error getting disk usage: {ex.Message}");
+                return 0;
+            }
+        }
+
+        private double GetCurrentNetworkUsage()
+        {
+            if (_networkInterfaces == null || _networkInterfaces.Length == 0)
+            {
+                return 0;
+            }
+
+            long totalBytesSent = 0;
+            long totalBytesReceived = 0;
+
+            for (int i = 0; i < _networkInterfaces.Length; i++)
+            {
+                if (_networkInterfaces[i].OperationalStatus == OperationalStatus.Up &&
+                    _networkInterfaces[i].Supports(NetworkInterfaceComponent.IPv4))
+                {
+                    IPv4InterfaceStatistics stats = _networkInterfaces[i].GetIPv4Statistics();
+
+                    long currentBytesSent = stats.BytesSent;
+                    long currentBytesReceived = stats.BytesReceived;
+
+                    long bytesSentDelta = currentBytesSent - _lastBytesSent[i];
+                    long bytesReceivedDelta = currentBytesReceived - _lastBytesReceived[i];
+
+                    totalBytesSent += bytesSentDelta;
+                    totalBytesReceived += bytesReceivedDelta;
+
+                    // Обновляем последние значения
+                    _lastBytesSent[i] = currentBytesSent;
+                    _lastBytesReceived[i] = currentBytesReceived;
+                }
+            }
+            
+            long result = (totalBytesSent + totalBytesReceived) * 8;
+            result = result / 1000000;
+            return result;
         }
 
         private bool IsRunAsAdmin()
@@ -145,6 +299,23 @@ namespace SystemResourcesControlWpf
             card.Content = panel;
             content(panel);
             OutputPanel.Children.Add(card);
+        }
+
+        private void ShowPerformanceMonitor_Click(object sender, RoutedEventArgs e)
+        {
+            if (_performanceMonitorWindow == null || !_performanceMonitorWindow.IsVisible)
+            {
+                _performanceMonitorWindow = new PerformanceMonitorWindow();
+                _performanceMonitorWindow.CpuUsage = CurrentCpuUsageValue;
+                _performanceMonitorWindow.RamUsage = CurrentRamUsageValue;
+                _performanceMonitorWindow.DiskUsage = CurrentDiskUsageValue;
+                _performanceMonitorWindow.NetworkUsage = CurrentNetworkUsageValue;
+                _performanceMonitorWindow.Show();
+            }
+            else
+            {
+                _performanceMonitorWindow.Focus();
+            }
         }
 
         private void ShowCpuInfo_Click(object sender, RoutedEventArgs e)
@@ -236,12 +407,46 @@ namespace SystemResourcesControlWpf
             {
                 try
                 {
-                    foreach (var diskInfo in _systemInfoService.GetDiskInfo())
+                    ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive");
+
+                    foreach (ManagementObject queryObj in searcher.Get())
                     {
-                        AddOutput("Model: " + diskInfo.Model, panel);
-                        AddOutput("Interface Type: " + diskInfo.InterfaceType, panel);
-                        AddOutput("Size: " + diskInfo.Size + " GB", panel);
-                        AddOutput("MediaType: " + diskInfo.MediaType, panel);
+                        AddOutput("Model: " + queryObj["Model"], panel);
+                        AddOutput("Interface Type: " + queryObj["InterfaceType"], panel);
+                        ulong sizeBytes = (ulong)queryObj["Size"];
+                        AddOutput("Size: " + Math.Round(sizeBytes / (1024.0 * 1024.0 * 1024.0), 2) + " GB", panel);
+                        AddOutput("Manufacturer: " + queryObj["Manufacturer"], panel);
+                        AddOutput("MediaType: " + queryObj["MediaType"], panel); // Может быть null или не всегда точным
+                        AddOutput("Serial Number: " + queryObj["SerialNumber"], panel);
+
+                        string deviceId = queryObj["DeviceID"].ToString().Replace("\\\\.\\", "");
+                        ManagementObjectSearcher partitionSearcher = new ManagementObjectSearcher(
+                            $"ASSOCIATORS OF {{Win32_DiskDrive.DeviceID='{queryObj["DeviceID"]}'}} WHERE AssocClass = Win32_DiskDriveToDiskPartition");
+
+                        foreach (ManagementObject partitionObj in partitionSearcher.Get())
+                        {
+                            AddOutput("  Partition:", panel);
+                            AddOutput("    Name: " + partitionObj["Name"], panel);
+                            ulong partitionSizeBytes = (ulong)partitionObj["Size"];
+                            AddOutput("    Size: " + Math.Round(partitionSizeBytes / (1024.0 * 1024.0 * 1024.0), 2) + " GB", panel);
+                            AddOutput("    Type: " + partitionObj["Type"], panel);
+
+                            ManagementObjectSearcher volumeSearcher = new ManagementObjectSearcher(
+                                $"ASSOCIATORS OF {{Win32_DiskPartition.DeviceID='{partitionObj["DeviceID"]}'}} WHERE AssocClass = Win32_LogicalDiskToPartition");
+
+                            foreach (ManagementObject volumeObj in volumeSearcher.Get())
+                            {
+                                AddOutput("    Volume:", panel);
+                                AddOutput("      Drive Letter: " + volumeObj["DriveLetter"], panel);
+                                AddOutput("      Volume Name: " + volumeObj["VolumeName"], panel);
+                                string fileSystem = volumeObj["FileSystem"]?.ToString();
+                                AddOutput("      File System: " + fileSystem, panel);
+                                ulong volumeSizeBytes = (ulong)volumeObj["Size"];
+                                AddOutput("      Size: " + Math.Round(volumeSizeBytes / (1024.0 * 1024.0 * 1024.0), 2) + " GB", panel);
+                                ulong freeSpaceBytes = (ulong)volumeObj["FreeSpace"];
+                                AddOutput("      Free Space: " + Math.Round(freeSpaceBytes / (1024.0 * 1024.0 * 1024.0), 2) + " GB", panel);
+                            }
+                        }
                         AddOutputSeparator(panel);
                     }
                 }
@@ -252,6 +457,36 @@ namespace SystemResourcesControlWpf
             });
         }
 
+                private NetworkInterface[] _networkInterfaces;
+        private long[] _lastBytesSent;
+        private long[] _lastBytesReceived;
+
+        private void InitializeNetworkCounters()
+        {
+            if (!NetworkInterface.GetIsNetworkAvailable())
+            {
+                _networkInterfaces = Array.Empty<NetworkInterface>();
+                _lastBytesSent = Array.Empty<long>();
+                _lastBytesReceived = Array.Empty<long>();
+                return;
+            }
+
+            _networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            _lastBytesSent = new long[_networkInterfaces.Length];
+            _lastBytesReceived = new long[_networkInterfaces.Length];
+
+            // Initialize last values
+            for (int i = 0; i < _networkInterfaces.Length; i++)
+            {
+                if (_networkInterfaces[i].Supports(NetworkInterfaceComponent.IPv4))
+                {
+                    var stats = _networkInterfaces[i].GetIPv4Statistics();
+                    _lastBytesSent[i] = stats.BytesSent;
+                    _lastBytesReceived[i] = stats.BytesReceived;
+                }
+            }
+        }
+        
         private void ShowNetworkInfo_Click(object sender, RoutedEventArgs e)
         {
             OutputPanel.Children.Clear();
@@ -345,7 +580,7 @@ namespace SystemResourcesControlWpf
             {
                 Benchmark benchmark = new Benchmark();
                 _model.BenchmarkRun(benchmark);
-                Dispatcher.Invoke(() =>
+                Dispatcher.Invoke((Action)(() =>
                 {
                     AddOutput("Benchmark Score: " + benchmark.score.ToString("N0"), panel);
                     AddOutput("Threads: " + benchmark.threads, panel);
@@ -356,7 +591,7 @@ namespace SystemResourcesControlWpf
                     AddOutput("Memory Score: " + benchmark.memoryScore.ToString("N0"), panel);
                     AddOutput("Mixed Score: " + benchmark.mixedScore.ToString("N0"), panel);
                     AddOutputSeparator(panel);
-                });
+                }));
             });
         }
     }

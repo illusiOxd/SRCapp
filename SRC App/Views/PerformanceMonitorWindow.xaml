@@ -1,0 +1,11 @@
+﻿<Window x:Class="SystemResourcesControlWpf.PerformanceMonitorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Performance Monitor" Height="200" Width="300">
+    <StackPanel Margin="10">
+        <TextBlock Text="{Binding CpuUsage, StringFormat=CPU Usage: {0:F2}%}" />
+        <TextBlock Text="{Binding RamUsage, StringFormat=RAM Usage: {0:F2}%}" />
+        <TextBlock Text="{Binding DiskUsage, StringFormat=Disk Usage: {0:F2}%}" />
+        <TextBlock Text="{Binding NetworkUsage, StringFormat=Network Usage: {0:F2} MBit/s}" />
+    </StackPanel>
+</Window>

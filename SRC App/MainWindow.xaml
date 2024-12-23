@@ -68,6 +68,9 @@
                 </Button>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button ToolTip="Show Performance Monitor" Click="ShowPerformanceMonitor_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Speedometer}" Width="24" Height="24" />
+                </Button>
                 <Button ToolTip="Continue Monitoring" Click="ContinueRun_Click">
                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Play}" Width="24" Height="24" />
                 </Button>
