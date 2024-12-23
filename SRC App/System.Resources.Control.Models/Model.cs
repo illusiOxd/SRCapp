@@ -81,6 +81,8 @@ namespace System.Resources.Control.Models
              int operationType = random.Next(4);
                Stopwatch operationStopwatch = Stopwatch.StartNew();
 
+               
+               
                switch (operationType)
                {
                   case 0: // Floating-point operations

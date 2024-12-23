@@ -10,10 +10,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
+      <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc4.5" />
       <PackageReference Include="MahApps.Metro" Version="3.0.0-alpha0513" />
       <PackageReference Include="MahApps.Metro.IconPacks" Version="5.1.0" />
       <PackageReference Include="MahApps.Metro.SimpleChildWindow" Version="2.2.1" />
+      <PackageReference Include="MaterialDesignColors" Version="3.1.1-ci852" />
       <PackageReference Include="MaterialDesignInXamlToolkitAddOns" Version="0.0.6" />
+      <PackageReference Include="MaterialDesignThemes" Version="5.1.1-ci852" />
       <PackageReference Include="OpenHardwareMonitor" Version="0.9.6" />
       <PackageReference Include="OpenHardwareMonitorLibCore" Version="1.0.2" />
       <PackageReference Include="OpenHardwareMonitorLibNet" Version="2023.11.10.1755" />

@@ -7,7 +7,8 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="System Resources Control" Height="600" Width="800"
-        FontFamily="Segoe UI" FontSize="14">
+        FontFamily="Segoe UI" FontSize="14"
+        Loaded="MainWindow_Loaded">
 
     <Window.Resources>
         <Style TargetType="Button">
@@ -31,61 +32,60 @@
         </Style>
     </Window.Resources>
 
-    <Grid Background="#f0f0f0">
+    <Grid Background="{DynamicResource MaterialDesignPaper}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-         <DockPanel Grid.Row="0" Margin="10">
-            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                  <Button ToolTip="Show CPU Information" Click="ShowCpuInfo_Click">
+        <DockPanel Grid.Row="0" Margin="10" >
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" >
+                <Button ToolTip="Show CPU Information" Click="ShowCpuInfo_Click">
                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Chip}" Width="24" Height="24" />
                 </Button>
-                 <Button ToolTip="Show GPU Information" Click="ShowGpuInfo_Click">
-                     <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Gpu}" Width="24" Height="24" />
-               </Button>
-                 <Button ToolTip="Show RAM Information" Click="ShowRamInfo_Click">
-                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Memory}" Width="24" Height="24" />
-               </Button>
-                 <Button ToolTip="Show Disk Information" Click="ShowDiskInfo_Click">
-                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Harddisk}" Width="24" Height="24" />
+                <Button ToolTip="Show GPU Information" Click="ShowGpuInfo_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Gpu}" Width="24" Height="24" />
                 </Button>
-                 <Button ToolTip="Show Network Information" Click="ShowNetworkInfo_Click">
-                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Network}" Width="24" Height="24" />
+                <Button ToolTip="Show RAM Information" Click="ShowRamInfo_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Memory}" Width="24" Height="24" />
                 </Button>
-                 <Button ToolTip="Show System Summary" Click="ShowSystemSummary_Click">
-                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Information}" Width="24" Height="24" />
-                 </Button>
+                <Button ToolTip="Show Disk Information" Click="ShowDiskInfo_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Harddisk}" Width="24" Height="24" />
+                </Button>
+                <Button ToolTip="Show Network Information" Click="ShowNetworkInfo_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Network}" Width="24" Height="24" />
+                </Button>
+                <Button ToolTip="Show System Summary" Click="ShowSystemSummary_Click">
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Information}" Width="24" Height="24" />
+                </Button>
                 <Button ToolTip="Show Temperature Information" Click="ShowTemperatureInfo_Click">
-                    <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.Thermometer}" Width="24" Height="24" />
-               </Button>
-                 <Button Content="Run Benchmark" Click="RunBenchmark_Click"/>
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Thermometer}" Width="24" Height="24" />
+                </Button>
+                <Button Content="Run Benchmark" Click="RunBenchmark_Click" Margin="10,5,5,5"/>
                 <Button ToolTip="Exit Application" Click="TerminateProgram_Click">
-                   <materialDesign:PackIcon   Kind="{x:Static materialDesign:PackIconKind.ExitToApp}" Width="24" Height="24" />
-                 </Button>
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ExitToApp}" Width="24" Height="24" />
+                </Button>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button ToolTip="Continue Monitoring" Click="ContinueRun_Click">
-                   <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Play}" Width="24" Height="24" />
+                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Play}" Width="24" Height="24" />
                 </Button>
-                 <Button ToolTip="Stop Monitoring" Click="StopRun_Click">
+                <Button ToolTip="Stop Monitoring" Click="StopRun_Click">
                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Stop}" Width="24" Height="24" />
-                 </Button>
+                </Button>
             </StackPanel>
         </DockPanel>
-        
-           <StackPanel Grid.Row="1" Margin="10" Orientation="Vertical">
-            <TextBlock x:Name="BenchmarkStatusTextBlock"  HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas" Visibility="Collapsed"/>
-             <TextBlock x:Name="BenchmarkStageTextBlock" HorizontalAlignment="Center"  TextWrapping="Wrap" FontFamily="Consolas" Visibility="Collapsed" Margin="0,2,0,2"/>
-           <ProgressBar x:Name="BenchmarkProgressBar" Height="20" Minimum="0" Maximum="100"  Margin="0,5,0,5" Visibility="Collapsed" />
+        <StackPanel Grid.Row="1" Margin="10" Orientation="Vertical">
+            <TextBlock x:Name="CpuUsageTextBlock" HorizontalAlignment="Center" FontSize="16" Margin="10" />
+            <Border BorderBrush="LightGray" BorderThickness="1" Margin="5">
+                <Canvas x:Name="CpuUsageCanvas" Height="150" ClipToBounds="True" Background="White">
+                    <Polyline x:Name="CpuUsagePolyline" Stroke="CadetBlue" StrokeThickness="2"/>
+                </Canvas>
+            </Border>
         </StackPanel>
-
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"  Margin="10">
-          <StackPanel x:Name="OutputPanel" >
-          </StackPanel>
-       </ScrollViewer>
-
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10">
+            <StackPanel x:Name="OutputPanel"  />
+        </ScrollViewer>
     </Grid>
 </Window>
