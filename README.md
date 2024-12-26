@@ -14,6 +14,7 @@ This WPF application provides information about your computer's system resources
 *   **System Summary:** Displays a brief summary of information about CPU, RAM, GPU, and disks.
 *   **Temperature Info:** Shows the current temperature.
 *   **Benchmark feature:** For performance evaluation
+*   **CPU, RAM, network and disk usage stats: CPU, RAM, network and disk usage stats in real time**
 *   **Controls:**
     *   "Continue (y)" button: Restarts monitoring.
     *   "Stop (n)" button: Stops monitoring.
